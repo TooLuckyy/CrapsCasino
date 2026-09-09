@@ -9,6 +9,25 @@ class Status(Enum):
     CRAP_OUT = 4
     SEVEN_OUT = 5
     
+class BetType(Enum):
+    PASS_LINE = "pass_line"
+    DONT_PASS = "dont_pass"
+    FIELD = "field"
+    COME = "come"
+    DONT_COME = "dont_come"
+    PLACE_4 = "place_4"
+    PLACE_5 = "place_5"
+    PLACE_6 = "place_6"
+    PLACE_8 = "place_8"
+    PLACE_9 = "place_9"
+    PLACE_10 = "place_10"
+    PASS_ODDS = "pass_odds"
+    DONT_PASS_ODDS = "dont_pass_odds"
+    
+class BetStatus(Enum):
+    OFF = "off"
+    ON = "on"
+    CLOSED = "closed"
 
 
 class CrapsGame:
@@ -26,9 +45,9 @@ class CrapsGame:
     
     #process game sequence and updates game state and rolls
     def process_roll(self):
+        
         #checks if player is allowed to roll and return None if not valid
-        can_roll = self.check_status()
-        if not can_roll:
+        if self.status in [Status.WINNER, Status.CRAP_OUT, Status.SEVEN_OUT]:
             return None
             
         player_roll = self.roll()
@@ -56,14 +75,10 @@ class CrapsGame:
         
         return player_roll
     
-    #checks current game state and validates if player can roll
-    def check_status(self):
-        if self.status in [Status.WINNER, Status.CRAP_OUT, Status.SEVEN_OUT]:
-            return False
+class Bets:
+    def __init__(self, bet_type, amount):
         
-        return True
-        
-        
+             
         
 def main():
     game = CrapsGame()
