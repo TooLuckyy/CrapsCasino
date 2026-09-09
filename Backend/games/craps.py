@@ -8,7 +8,8 @@ class Status(Enum):
     WINNER = 3
     CRAP_OUT = 4
     SEVEN_OUT = 5
-    
+
+#define bet types
 class BetType(Enum):
     PASS_LINE = "pass_line"
     DONT_PASS = "dont_pass"
@@ -23,7 +24,8 @@ class BetType(Enum):
     PLACE_10 = "place_10"
     PASS_ODDS = "pass_odds"
     DONT_PASS_ODDS = "dont_pass_odds"
-    
+
+#Enum of bet state
 class BetStatus(Enum):
     OFF = "off"
     ON = "on"
@@ -35,6 +37,7 @@ class CrapsGame:
     def __init__(self):
         self.point = None
         self.status = Status.COME_OUT
+        self.bets = []
         
     #rolls 2 dice outputing a random val 1-6 while also return sum of both die
     def roll(self):
@@ -75,9 +78,26 @@ class CrapsGame:
         
         return player_roll
     
-class Bets:
+    #
+    def place_bet(self, bet_type, amount):
+        bet = Bet(bet_type, amount)
+        self.bets.appsend(bet)
+    
+class Bet:
     def __init__(self, bet_type, amount):
+        self.bet_type = bet_type
+        self.amount = amount
+    
+    #ensures minimum bet is valid    
+    def is_valid(self):
+        return self.amount >= 10
+    
+    def contract_bet(self, bet_type, amount):
+        if not self.is_valid():
+            return None
         
+        if self.bet_type == BetType.PASS_LINE:
+            
              
         
 def main():
