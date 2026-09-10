@@ -84,8 +84,9 @@ class CrapsGame:
                             self.pay_bet(bet)    #field bet is payed
                 
             elif total in [2,3,12]:
-                self.status = Status.CRAP_OUT
+                self.status = Status.CRAP_OUT    #switch game status to crap out
                 
+                #checks for active bets and updates
                 for bet in self.bets:
                     if bet.bet_type == BetType.DONT_PASS:
                         self.pay_bet(bet)
@@ -95,29 +96,108 @@ class CrapsGame:
                         
                     elif bet.bet_type == BetType.FIELD:
                         if total == 12:
-                            self.push_bet(bet)
+                            self.push_bet(bet)    #bet is tied and returned
                         else:
                             self.pay_bet(bet)
                     
             else:
                 self.status = Status.POINT
-                self.point  = player_roll[2]
+                self.point  = total
+                                
                 
-                for bet in self.bets:
-                    if bet.bet_type == BetType.FIELD:
-                        if total in [5,6,8]:
+        #when rolling for point pass line rules are applied and bets are updated
+        elif self.status == Status.POINT:
+            
+            #determine the outcome of the current round
+            if total == 7:
+                self.status = Status.SEVEN_OUT #sets status to seven out
+                
+            elif total == self.point:
+                self.status = Status.WINNER    #sets status to winner
+            
+            #checks active bets and applies betting rules for that object
+            for bet in self.bets:
+                match bet.bet_type: 
+                    #match each bet to its bet type and pays or losses are applied
+                    case BetType.PASS_LINE:
+                        if total == 7:
+                            self.lose_bet(bet)
+                            
+                        elif total == self.point:
+                            self.pay_bet(bet)
+                        
+                    case BetType.DONT_PASS: 
+                        if total == self.point:
+                            self.lose_bet(bet)
+                            
+                        elif total == 7:
+                            self.pay_bet(bet)
+                        
+                    case BetType.FIELD: #field logic is checked
+                        if total in [5,6,7,8]:
                             self.lose_bet(bet)
                         else:
                             self.pay_bet(bet)
-                
-        #if rolling for point, point rules applied
-        elif self.status == Status.POINT:
-            if total == self.point:
-                self.status = Status.WINNER
-                
-            elif total == 7:
-                self.status = Status.SEVEN_OUT
-                
+                            
+                    case BetType.COME: #come bet logic is checked
+                        if bet.number == None:
+                            if total in [7,11]:
+                                self.pay_bet(bet)
+                                
+                            elif total in [2,3,12]:
+                                self.lose_bet(bet)
+                                
+                            else:
+                                bet.set_number(total) #if no come bet number is established, establish one
+                                
+                        else:
+                            if total == 7:
+                                self.lose_bet(bet)
+                            elif total == bet.number:
+                                self.pay_bet(bet)
+                                
+                    case BetType.DONT_COME: #come bet logic is checked
+                        if bet.number == None:
+                            if total in [7,11]:
+                                self.lose_bet(bet)
+                                
+                            elif total in [2,3]:
+                                self.pay_bet(bet)
+                                
+                            elif total == 12:
+                                self.push_bet(bet)
+                            
+                            else:
+                                bet.set_number(total) #if no active come bet set come bet number
+                        
+                        else:
+                            if total == 7:
+                                self.pay_bet(bet)
+                            elif total == bet.number:
+                                self.lose_bet(bet)
+                    
+                    #place bets are checked and bet rules are applied            
+                    case BetType.PLACE_4 | BetType.PLACE_5 | BetType.PLACE_6 | BetType.PLACE_8 | BetType.PLACE_9 | BetType.PLACE_10 as place_bet:
+                        place_number = int(place_bet.value.split("_")[1]) #typecase the enum value of place bet (a string) into its number
+                        
+                        if place_number == total:
+                            self.pay_bet(bet)
+                        elif total == 7:
+                            self.lose_bet(bet)
+                    
+                    #odds bets win on pass line or don't pass line rules        
+                    case BetType.PASS_ODDS:
+                        if total == 7:
+                            self.lose_bet(bet)
+                        elif total == self.point:
+                            self.pay_bet(bet)
+                            
+                    case BetType.DONT_PASS_ODDS:
+                        if total == 7:
+                            self.pay_bet(bet)
+                        elif total == self.point:
+                            self.lose_bet(bet)
+                                     
         return player_roll
     
     #adds a specified bet type and amount to a bets array
@@ -138,7 +218,7 @@ class CrapsGame:
     #def lose_bet(self, bet):
     
     #a tie bet/push users bet it returned
-    #def pass_bet(self, bet):
+    #def push_bet(self, bet):
         
     
 class Bet:
@@ -168,9 +248,18 @@ class Bet:
 def main():
     game = CrapsGame()
     
+    game.place_bet("pass_line", 10)
+    
     result = game.process_roll()
      
     print(result)
+    print(game.status)
+    print(game.point)
+    
+    game.roll()
+    result2 = game.process_roll()
+    
+    print(result2)
     print(game.status)
     print(game.point)
 
