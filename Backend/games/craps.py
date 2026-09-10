@@ -8,6 +8,15 @@ class Status(Enum):
     WINNER = 3
     CRAP_OUT = 4
     SEVEN_OUT = 5
+    
+#define bet sizes
+class BetAmount(Enum):
+    ONE = 1
+    FIVE = 5
+    TEN = 10
+    TWENTY_FIVE = 25
+    FIFTY = 50
+    ONE_HUNDRED = 100
 
 #define bet types
 class BetType(Enum):
@@ -61,12 +70,45 @@ class CrapsGame:
             if total in [7,11]:
                 self.status = Status.WINNER
                 
+                for bet in self.bets:
+                    if bet.bet_type == BetType.DONT_PASS:
+                        self.lose_bet(bet)       #don't pass line bet is removed
+                    
+                    elif bet.bet_type == BetType.PASS_LINE:
+                        self.pay_bet(bet)        #pass line bet is payed  
+                    
+                    elif bet.bet_type == BetType.FIELD:
+                        if total == 7:
+                            self.lose_bet(bet)   #field bet is lost
+                        else:
+                            self.pay_bet(bet)    #field bet is payed
+                
             elif total in [2,3,12]:
                 self.status = Status.CRAP_OUT
                 
+                for bet in self.bets:
+                    if bet.bet_type == BetType.DONT_PASS:
+                        self.pay_bet(bet)
+                        
+                    elif bet.bet_type == BetType.PASS_LINE:
+                        self.lose_bet(bet)
+                        
+                    elif bet.bet_type == BetType.FIELD:
+                        if total == 12:
+                            self.push_bet(bet)
+                        else:
+                            self.pay_bet(bet)
+                    
             else:
                 self.status = Status.POINT
                 self.point  = player_roll[2]
+                
+                for bet in self.bets:
+                    if bet.bet_type == BetType.FIELD:
+                        if total in [5,6,8]:
+                            self.lose_bet(bet)
+                        else:
+                            self.pay_bet(bet)
                 
         #if rolling for point, point rules applied
         elif self.status == Status.POINT:
@@ -75,30 +117,53 @@ class CrapsGame:
                 
             elif total == 7:
                 self.status = Status.SEVEN_OUT
-        
+                
         return player_roll
     
-    #
+    #adds a specified bet type and amount to a bets array
     def place_bet(self, bet_type, amount):
+        #check if bet amount meets minimum requirements
+        if amount < 10:
+            return None
+        
         bet = Bet(bet_type, amount)
-        self.bets.appsend(bet)
+        self.bets.append(bet)
+    
+    #def remove_bet(self):
+    
+    #pays the winners bet    
+    #def pay_bet(self, bet):
+    
+    #takes the losing bets
+    #def lose_bet(self, bet):
+    
+    #a tie bet/push users bet it returned
+    #def pass_bet(self, bet):
+        
     
 class Bet:
     def __init__(self, bet_type, amount):
         self.bet_type = bet_type
         self.amount = amount
+        self.status = BetStatus.ON
+        self.number = None
     
-    #ensures minimum bet is valid    
-    def is_valid(self):
-        return self.amount >= 10
+    #switches bet status to on
+    def turn_on(self):
+        self.status = BetStatus.ON
     
-    def contract_bet(self, bet_type, amount):
-        if not self.is_valid():
-            return None
+    #switches bet status to off
+    def turn_off(self):
+        self.status = BetStatus.OFF
         
-        if self.bet_type == BetType.PASS_LINE:
-            
-             
+    #switches bet status to off
+    def close(self):
+        self.status = BetStatus.CLOSED
+        
+    #sets number attribut to specified number
+    def set_number(self, num):
+        self.number = num
+
         
 def main():
     game = CrapsGame()
