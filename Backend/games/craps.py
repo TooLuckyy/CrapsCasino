@@ -206,10 +206,85 @@ class CrapsGame:
         if amount < 10:
             return None
         
-        bet = Bet(bet_type, amount)
+        #validate bet action
+        match bet_type:
+            #checks current game status to status bet is allowed
+            case BetType.PASS_LINE:
+                if self.status != Status.COME_OUT:
+                    return None
+                
+            case BetType.DONT_PASS:
+                if self.status != Status.COME_OUT:
+                    return None
+                
+            case BetType.FIELD:
+                if self.status not in [Status.POINT, Status.COME_OUT]:
+                    return None
+                
+            case BetType.COME:
+                if self.status != Status.POINT:
+                    return None
+                
+            case BetType.DONT_COME:
+                if self.status != Status.POINT:
+                    return None
+                
+            case BetType.PLACE_4 | BetType.PLACE_5 | BetType.PLACE_6 | BetType.PLACE_8 | BetType.PLACE_9 | BetType.PLACE_10:
+                if self.status != Status.POINT:
+                    return None
+                
+            case BetType.PASS_ODDS:
+                if self.status != Status.POINT:
+                    return None
+                
+            case BetType.DONT_PASS_ODDS:
+                if self.status != Status.POINT:
+                    return None
+        
+        #for pass and don't pass odds validate and set number/bet its attached to if not just create the bet
+        if bet_type == BetType.PASS_ODDS:
+            valid = False
+            
+            #checks active bets for existing pass line bet 
+            for bet in  self.bets:
+                if bet.bet_type == BetType.PASS_LINE:
+                    valid = True
+                    break
+                
+            if not valid:
+                return None
+            
+            #if bet found checks if odds bet already exist and denys re-bet
+            for bet in self.bets:
+                if bet.bet_type == BetType.PASS_ODDS:
+                    return None
+                
+            bet = Bet(bet_type, amount, self.point)
+        elif bet_type == BetType.DONT_PASS_ODDS:
+            valid = False
+            
+            #checks if don't pass bet exist
+            for bet in  self.bets:
+                if bet.bet_type == BetType.DONT_PASS:
+                    valid = True
+                    break
+                
+            if not valid:
+                return None
+
+            #if bet found checks if there's already an active odds bet and denys re-bet
+            for bet in self.bets:
+                if bet.bet_type == BetType.DONT_PASS_ODDS:
+                    return None
+                
+            bet = Bet(bet_type, amount, self.point)
+            
+        else:
+            bet = Bet(bet_type, amount)
+
         self.bets.append(bet)
     
-    #def remove_bet(self):
+    #def remove_bet(self,bet_type, amount):
     
     #pays the winners bet    
     def pay_bet(self, bet, total = None):
@@ -306,11 +381,11 @@ class CrapsGame:
         
     
 class Bet:
-    def __init__(self, bet_type, amount):
+    def __init__(self, bet_type, amount, number = None):
         self.bet_type = bet_type
         self.amount = amount
         self.status = BetStatus.ON
-        self.number = None
+        self.number = number
     
     #switches bet status to on
     def turn_on(self):
